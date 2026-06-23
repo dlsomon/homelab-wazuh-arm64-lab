@@ -1,0 +1,54 @@
+name: Deploy Custom Wazuh Rules
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'custom_rules/**'
+
+jobs:
+  deploy:
+    # Limits execution target to your specific self-hosted runner with the 'wazuh' tag
+    runs-on: [self-hosted, wazuh]
+
+    env:
+      SSH_OPTS: "-i ~/.ssh/wazuh_deploy_key -o StrictHostKeyChecking=no"
+      WAZUH_HOST: "${{ secrets.WAZUH_VM_USER }}@${{ secrets.WAZUH_VM_IP }}"
+
+    steps:
+    - name: Checkout Code Repository
+      uses: actions/checkout@v4
+      
+    - name: Add SSH key to known_hosts
+      run: |
+        mkdir -p ~/.ssh
+        ssh-keyscan -H ${{ secrets.WAZUH_VM_IP }} >> ~/.ssh/known_hosts
+
+    - name: Retrieve SSH Private Key
+      run: |
+        # Write the private key from secrets to disk for use by ssh/scp
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/wazuh_deploy_key
+        chmod 600 ~/.ssh/wazuh_deploy_key
+
+    - name: Copy rules to Wazuh VM
+      run: |
+        # Copy the modified rules file to the Wazuh VM's /tmp directory for validation
+        scp ${{ env.SSH_OPTS }} ${{ github.workspace }}/custom_rules/local_rules.xml ${{ env.WAZUH_HOST }}:/tmp/local_rules.xml.tmp
+
+    - name: Deploy rules on Wazuh VM
+      run: |
+        # Execute the dedicated, highly-privileged deployment script securely
+        ssh ${{ env.SSH_OPTS }} ${{ env.WAZUH_HOST }} << 'EOF'
+            sudo /usr/local/bin/deploy-wazuh-rules.sh
+        EOF
+
+    - name: Cleanup Credentials
+      if: always()
+      run: |
+        # SECURITY: Remove the private SSH key from the self-hosted runner
+        rm -f ~/.ssh/wazuh_deploy_key
+        # Remove any leftover temp/staging files on the Wazuh VM if deployment failed
+        ssh ${{ env.SSH_OPTS }} ${{ env.WAZUH_HOST }} \
+          "rm -f /tmp/local_rules.xml.tmp /var/ossec/etc/rules/local_rules.tmp.xml" || true
