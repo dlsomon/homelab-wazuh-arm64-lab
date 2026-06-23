@@ -10,3 +10,4 @@
     <match>profile="snap.firefox.firefox"</match>
     <description>Suppressed noisy alert for apparmor with profile "snap.firefox.firefox"</description>
   </rule>
+</group>
