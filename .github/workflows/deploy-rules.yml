@@ -14,7 +14,7 @@ jobs:
     runs-on: [self-hosted, wazuh]
 
     env:
-      SSH_OPTS: "-i ~/.ssh/wazuh_deploy_key -o StrictHostKeyChecking=no"
+      SSH_OPTS: "-i ~/.ssh/wazuh_ssh_key -o StrictHostKeyChecking=no"
       WAZUH_HOST: "${{ secrets.WAZUH_VM_USER }}@${{ secrets.WAZUH_VM_IP }}"
 
     steps:
@@ -29,8 +29,8 @@ jobs:
     - name: Retrieve SSH Private Key
       run: |
         # Write the private key from secrets to disk for use by ssh/scp
-        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/wazuh_deploy_key
-        chmod 600 ~/.ssh/wazuh_deploy_key
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/wazuh_ssh_key
+        chmod 600 ~/.ssh/wazuh_ssh_key
 
     - name: Copy rules to Wazuh VM
       run: |
@@ -48,7 +48,7 @@ jobs:
       if: always()
       run: |
         # SECURITY: Remove the private SSH key from the self-hosted runner
-        rm -f ~/.ssh/wazuh_deploy_key
+        rm -f ~/.ssh/wazuh_ssh_key
         # Remove any leftover temp/staging files on the Wazuh VM if deployment failed
         ssh ${{ env.SSH_OPTS }} ${{ env.WAZUH_HOST }} \
           "rm -f /tmp/local_rules.xml.tmp /var/ossec/etc/rules/local_rules.tmp.xml" || true
