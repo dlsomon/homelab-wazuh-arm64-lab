@@ -1,0 +1,12 @@
+<group name="local, custom_suppression">
+  <!-- 
+    Suppress noisy AppArmor DENIED alerts (Rule 52002) caused by the Firefox snap package. 
+    Firefox snap's strict AppArmor profile causes frequent denied accesses to system resources,
+    which floods the logs. This rule silences these specific Firefox alerts.
+  -->
+  <rule id="100000" level="0">
+    <if_sid>52002</if_sid>
+    <decoded_as>kernel</decoded_as>
+    <match>profile="snap.firefox.firefox"</match>
+    <description>Suppressed noisy alert for apparmor with profile "snap.firefox.firefox"</description>
+  </rule>
