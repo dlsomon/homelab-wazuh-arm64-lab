@@ -24,7 +24,8 @@ jobs:
     - name: Add SSH key to known_hosts
       run: |
         mkdir -p ~/.ssh
-        echo "${{ secrets.WAZUH_VM_IP }}"
+        # Remove any stale/duplicate keys for this IP first
+        ssh-keygen -R ${{ secrets.WAZUH_VM_IP }} || true
         ssh-keyscan -H ${{ secrets.WAZUH_VM_IP }} >> ~/.ssh/known_hosts
 
     - name: Retrieve SSH Private Key
