@@ -24,6 +24,7 @@ jobs:
     - name: Add SSH key to known_hosts
       run: |
         mkdir -p ~/.ssh
+        echo "${{ secrets.WAZUH_VM_IP }}"
         ssh-keyscan -H ${{ secrets.WAZUH_VM_IP }} >> ~/.ssh/known_hosts
 
     - name: Retrieve SSH Private Key
